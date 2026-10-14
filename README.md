@@ -1,9 +1,9 @@
-# WHITE RABBIT — Portfolio of Saptarshi Mazumder
+# Code Blazer — Portfolio of Saptarshi Mazumder
 
 **Live site:** https://code-blaze.github.io
 
 An interactive, threat-intelligence-themed portfolio. Visitors play an analyst tracking an
-elusive white-hat actor known only as **WHITE RABBIT**, pull the attribution report from a sealed
+elusive white-hat actor known only as **Code BlazerT**, pull the attribution report from a sealed
 archive, and declassify it to reveal who is behind the alias.
 
 ## How it plays
