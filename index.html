@@ -268,7 +268,7 @@
 
   <section class="choice" id="choice" aria-live="polite">
     <div class="doc-bar"><i></i><i></i><i></i>
-      <span>sealed-archive://dossiers/WR-0x7F/attribution_report.txt</span><em class="ok">DECRYPTED</em>
+      <span>sealed-archive://dossiers/CB-0x7F/attribution_report.txt</span><em class="ok">DECRYPTED</em>
     </div>
     <div class="doc-body">
     <div class="doc" id="doc">
@@ -309,7 +309,7 @@
 
 
 <div class="hud bottom">
-  <div class="hide-sm">TLP:AMBER // Actor: WHITE RABBIT // Attribution: pending</div>
+  <div class="hide-sm">TLP:AMBER // Actor: CODE BLAZER // Attribution: pending</div>
   <button id="skip" type="button">Skip intro &raquo;</button>
 </div>
 
@@ -330,20 +330,20 @@
        {pause: ms}
      ================================================================ */
   const SCRIPT = [
-    {cmd: 'cat ~/intel/actors/white_rabbit.profile'},
+    {cmd: 'cat ~/intel/actors/code_blazer.profile'},
     {out: '<span class="dim">─── THREAT ACTOR PROFILE ─────────────── </span><span class="yl">TLP:AMBER</span>', wait: 40},
-    {out: '  ACTOR        <span class="kw">WHITE RABBIT</span>', wait: 40},
+    {out: '  ACTOR        <span class="kw">CODE BLAZER</span>', wait: 40},
     {out: '  ATTRIBUTION  <span class="err">UNKNOWN</span>', wait: 40},
     {out: '  ASSESSMENT   23 responsible disclosures. 0 malicious incidents.', wait: 40},
     {out: '               Classification: <span class="ok">WHITE HAT</span>', wait: 500},
 
-    {cmd: './attribute --actor "WHITE RABBIT"'},
+    {cmd: './attribute --actor "CODE BLAZER"'},
     {bar: '<span class="kb">[*]</span> correlating persona infrastructure', steps: 16, ms: 30},
     {out: '<span class="err">[-]</span> 312 linked personas. all burned.', wait: 650},
     {out: '<span class="ok">[+]</span> artifact recovered: reused signing key in archived commit', wait: 650},
     {out: '<span class="ok">[+]</span> attribution confidence: <span class="ok">HIGH</span>', wait: 450},
 
-    {cmd: './retrieve --dossier WR-0x7F --decrypt'},
+    {cmd: './retrieve --dossier CB-0x7F --decrypt'},
     {out: '<span class="kb">[*]</span> sealed archive mirror located. analyst clearance <span class="ok">granted</span>', wait: 350},
     {bar: '<span class="kb">[*]</span> decrypting attribution_report.enc', steps: 16, ms: 30},
 
@@ -525,7 +525,7 @@
     await sleep(350);
     await decode($('#c1'), 'Attribution complete.', 600);
     await sleep(200);
-    await decode($('#c2'), 'Threat actor WHITE RABBIT identified with high confidence. Disclosure is irreversible.', 900);
+    await decode($('#c2'), 'Threat actor CODE BLAZER identified with high confidence. Disclosure is irreversible.', 900);
     await sleep(250);
     $('#pills').classList.add('show');
     try { localStorage.setItem(SEEN_KEY, '1'); } catch (e) {}
@@ -742,7 +742,7 @@
     lineN = 0;
     put('<span class="ok">[+] attribution report declassified.</span> Welcome, analyst.');
     put('');
-    put('<span class="dim">THREAT ACTOR: WHITE RABBIT  →</span>  <span class="h">' + esc(DATA.name) + '</span>');
+    put('<span class="dim">THREAT ACTOR: CODE BLAZER  →</span>  <span class="h">' + esc(DATA.name) + '</span>');
     put(esc(DATA.tagline) + '  <span class="dim">· ' + esc(DATA.location) + '</span>');
     put('');
     put('Type ' + cl('help') + ' or tap a command below. Prefer reading? Try the ' + cl('simple', 'simple view') + '.');
@@ -756,7 +756,7 @@
     const links = [['about', 'About'], ['achievements', 'Achievements'], ['projects', 'Projects'], ['education', 'Education'], ['career', 'Career'], ['skills', 'Skills'], ['contact', 'Contact']];
     $('#svNav').innerHTML = links.map(([id, t]) => '<a href="#sv-' + id + '" data-go="sv-' + id + '">' + t + '</a>').join('');
     $('#svWrap').innerHTML =
-      '<section class="hero" aria-label="Statement"><p class="hero-cmd">$ whoami — WHITE RABBIT // ' + esc(DATA.role) + '</p>' +
+      '<section class="hero" aria-label="Statement"><p class="hero-cmd">$ whoami — CODE BLAZER // ' + esc(DATA.role) + '</p>' +
       '<div class="hero-big" id="heroBig">' + DATA.statements[0].map(l => '<span>' + esc(l) + '</span>').join('') + '</div>' +
       '<p class="hero-note">' + esc(DATA.philosophy) + '</p></section>' +
       '<header class="sv-head"><p class="sv-tag">// attribution report · declassified</p><h1>' + esc(DATA.name) + '</h1>' +
