@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# local backups and work-in-progress copies (kept on disk, not published)
+index.*.html
+preview.html
+_*.html
+
+# secrets: never publish keys or credentials
+.env
+*.env
+secrets.*

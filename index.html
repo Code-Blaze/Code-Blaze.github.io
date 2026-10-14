@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saptarshi Mazumder | Cybersecurity Analyst</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#000;
+    --g:#00ff66;
+    --g-dim:#00a843;
+    --g-faint:rgba(0,255,102,.14);
+    --ink:#cfe9d8;
+    --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    --mono:'Share Tech Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:#d7dae0;font-family:var(--mono);overflow:hidden}
+
+  /* ---------- background rain (invisible until the link is up) ---------- */
+  #bg,#rain{position:fixed;inset:0;width:100%;height:100%;border:0;z-index:0;pointer-events:none;opacity:0}
+  #bg[hidden],#rain[hidden]{display:none}
+  body.live #bg,body.live #rain{opacity:.9}
+
+  .vignette{position:fixed;inset:0;z-index:4;pointer-events:none;
+    background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.85) 100%)}
+  .scanlines{position:fixed;inset:0;z-index:5;pointer-events:none;
+    background:repeating-linear-gradient(to bottom,transparent 0,transparent 2px,rgba(0,0,0,.28) 3px)}
+  #flash{position:fixed;inset:0;z-index:8;pointer-events:none;opacity:0;background:#d9ffe9}
+
+  /* ---------- the flicker ---------- */
+  body.flicker #flash{animation:flash 1.5s linear forwards}
+  body.flicker #bg,body.flicker #rain{animation:rainOn 1.5s steps(1) forwards}
+  @keyframes flash{
+    0%{opacity:0} 4%{opacity:.85} 8%{opacity:0} 14%{opacity:.5} 17%{opacity:0}
+    32%{opacity:.6;background:#00ff66} 36%{opacity:0} 55%{opacity:.2} 58%{opacity:0} 100%{opacity:0}
+  }
+  @keyframes rainOn{
+    0%{opacity:0} 8%{opacity:.9} 14%{opacity:0} 22%{opacity:.6} 28%{opacity:0}
+    40%{opacity:.9} 46%{opacity:.15} 60%{opacity:.9} 100%{opacity:.9}
+  }
+
+  /* ---------- stage ---------- */
+  .stage{position:fixed;inset:0;z-index:2;display:grid;place-items:center;padding:24px 16px}
+
+  /* ---------- Kali-style terminal ---------- */
+  .term{width:min(900px,100%);height:min(540px,80vh);display:flex;flex-direction:column;
+    background:rgba(10,13,19,.96);border:1px solid #2b3345;border-radius:8px 8px 4px 4px;overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 40px rgba(0,255,102,.06);
+    transform:scale(.6);opacity:0;transition:transform .45s cubic-bezier(.2,.9,.3,1.2),opacity .3s}
+  .term.open{transform:none;opacity:1}
+  .term.close{transform:scaleY(.004) scaleX(1.1);opacity:0;transition:transform .35s ease-in,opacity .2s .25s}
+  .term.glitch{animation:jolt .5s steps(1) 1}
+  @keyframes jolt{
+    0%{transform:translate(-6px,2px) skewX(4deg);filter:hue-rotate(90deg) contrast(2)}
+    25%{transform:translate(5px,-3px);filter:invert(1)}
+    50%{transform:translate(0,6px) scaleY(1.03);filter:brightness(2)}
+    75%{transform:none;filter:none}
+  }
+  .term-bar{display:flex;align-items:center;background:#1a2030;padding:7px 12px;font-size:13px;color:#b8c0d0;border-bottom:1px solid #2b3345}
+  .term-title{flex:1;text-align:center;padding-left:48px}
+  .term-ctl{display:flex;gap:12px;font-size:12px;color:#8892a6}
+  .term-ctl i{font-style:normal}
+  .term-ctl .x{color:#ff6b6b}
+  .term-menu{background:#151a27;padding:4px 12px;font-size:12px;color:#9aa4b8;border-bottom:1px solid #222a3a;white-space:nowrap;overflow:hidden}
+  .term-body{flex:1;padding:12px 14px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;
+    font-size:clamp(11px,1.7vw,14.5px);line-height:1.5}
+  .tl{white-space:pre-wrap;word-break:break-all;min-height:1.5em}
+  .dim{color:#7d8597}
+  .kb{color:#5f8bff}
+  .kr{color:#ff5252;font-weight:700}
+  .kw{color:#fff;font-weight:700}
+  .ok{color:#4ee44e}
+  .yl{color:#f5d76e}
+  .err{color:#ff6b6b}
+  .big{color:var(--g);font-weight:700;text-shadow:0 0 10px rgba(0,255,102,.7)}
+  .blinky{animation:warn .4s steps(1) 6}
+  .kg{color:#4ee44e}
+  .rg{color:#4ee44e;font-weight:700}
+  .rb{color:#5f8bff;font-weight:700}
+  .warn{animation:warn .9s steps(1) 4}
+  @keyframes warn{50%{opacity:.15}}
+  .caret{display:inline-block;width:.55em;height:1em;background:#d7dae0;vertical-align:-.15em;margin-left:1px;animation:blink .9s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  /* ---------- the choice ---------- */
+  .stage > *{grid-area:1/1}
+  .choice{display:none;width:min(680px,100%);text-align:center;padding:0;overflow:hidden;
+    background:rgba(0,10,4,.72);border:1px solid var(--g-faint);backdrop-filter:blur(4px);
+    box-shadow:0 0 50px rgba(0,255,102,.12);opacity:0;transform:translateY(12px);transition:opacity .9s,transform .9s}
+  .choice.show{display:block}
+  .choice.in{opacity:1;transform:none}
+  .choice h1{font-weight:400;font-size:clamp(22px,4.4vw,38px);color:#eafff2;letter-spacing:.03em;min-height:1.3em;
+    text-shadow:0 0 16px rgba(0,255,102,.7)}
+  /* archive file window */
+  .doc-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--g-faint);
+    background:rgba(0,0,0,.55);font-size:11px;letter-spacing:.08em;color:var(--g-dim);text-align:left}
+  .doc-bar i{width:8px;height:8px;border-radius:50%;border:1px solid var(--g-dim);flex:none}
+  .doc-bar span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:4px}
+  .doc-bar em{font-style:normal;color:#ff5a64;flex:none}
+  .doc-bar em.ok{color:var(--g)}
+  .doc-body{padding:clamp(22px,4.5vw,40px) clamp(18px,4vw,40px)}
+  .doc{display:none}
+  .doc.show{display:block;animation:docIn .5s both}
+  @keyframes docIn{from{opacity:0;filter:blur(4px)}to{opacity:1;filter:none}}
+  .tlp{display:inline-block;font-size:12px;letter-spacing:.24em;color:#ff5a64;border:2px solid #ff5a64;padding:4px 10px;
+    margin-bottom:18px;transform:rotate(-3deg);opacity:0;text-shadow:0 0 8px rgba(255,90,100,.5)}
+  .tlp.show{animation:stamp .35s cubic-bezier(.3,1.6,.5,1) forwards}
+  @keyframes stamp{from{opacity:0;transform:rotate(-3deg) scale(1.8)}to{opacity:1;transform:rotate(-3deg) scale(1)}}
+  .choice .sub{margin-top:10px;font-size:clamp(14px,2.2vw,18px);color:var(--g);min-height:1.4em}
+  .pills{margin-top:30px;opacity:0;transform:translateY(8px);transition:.7s;pointer-events:none}
+  .pills.show{opacity:1;transform:none;pointer-events:auto}
+  .act{font:inherit;cursor:pointer;font-size:clamp(14px,2vw,17px);letter-spacing:.3em;text-transform:uppercase;
+    padding:14px 34px;background:rgba(255,46,61,.06);color:#ff5a64;border:1px solid rgba(255,90,100,.7);
+    box-shadow:0 0 18px rgba(255,46,61,.2);transition:.25s;animation:armed 2.4s ease-in-out infinite}
+  .act:hover,.act:focus-visible{background:#ff2e3d;color:#1a0003;box-shadow:0 0 30px rgba(255,46,61,.6);outline:none;animation:none}
+  @keyframes armed{50%{box-shadow:0 0 30px rgba(255,46,61,.45)}}
+  .act-note{margin-top:12px;font-size:12px;letter-spacing:.06em;color:#7d8597}
+  .after{margin-top:22px;font-size:14px;color:var(--g);min-height:1.4em}
+
+  /* ---------- HUD ---------- */
+  .hud{position:fixed;z-index:9;left:0;right:0;display:flex;justify-content:space-between;align-items:center;gap:12px;
+    padding:12px 22px;font-size:12px;letter-spacing:.12em;color:var(--g-dim);text-transform:uppercase}
+  .hud.bottom{bottom:0;border-top:1px solid var(--g-faint);background:linear-gradient(to top,rgba(0,0,0,.85),rgba(0,0,0,0))}
+  #skip{margin-left:auto;background:none;border:1px solid var(--g-faint);color:var(--g-dim);
+    font:inherit;letter-spacing:.12em;text-transform:uppercase;padding:4px 10px;cursor:pointer}
+  #skip:hover{color:var(--g);border-color:var(--g)}
+  body.live #skip{visibility:hidden}
+  .hud{transition:opacity 1.5s}
+  body.shell .hud{opacity:0;pointer-events:none}
+
+  /* ---------- interactive terminal (after the red pill) ---------- */
+  .sh{width:min(980px,100%);height:min(78vh,700px);display:flex;flex-direction:column;
+    background:rgba(8,11,16,.9);border:1px solid #2b3345;border-radius:8px 8px 4px 4px;overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 40px rgba(0,255,102,.06);
+    visibility:hidden;opacity:0;transform:translateY(14px) scale(.98);transition:opacity .6s,transform .6s,visibility .6s}
+  body.shell.view-term .sh{visibility:visible;opacity:1;transform:none}
+  .sh-body{flex:1;min-height:0;overflow-y:auto;padding:12px 14px;font-size:clamp(12px,1.7vw,14.5px);line-height:1.55;
+    scrollbar-width:thin;scrollbar-color:#2b3345 transparent;color:#d7dae0}
+  .ln{white-space:pre-wrap;word-break:break-word;min-height:1.55em;animation:lnIn .25s both}
+  @keyframes lnIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+  .ind{display:block;padding-left:3ch}
+  .h{color:var(--g);font-weight:700;text-shadow:0 0 8px rgba(0,255,102,.5)}
+  .b{color:#fff;font-weight:700}
+  .pr{color:#4ee44e;font-weight:700}
+  .sh a{color:#7db8ff;text-decoration:underline;text-underline-offset:2px}
+  .sh a:hover{color:#fff}
+  .cl{color:var(--g);cursor:pointer;border-bottom:1px dotted var(--g-dim)}
+  .cl:hover{color:#fff}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;padding:8px 12px;border-top:1px solid #222a3a;background:#101521}
+  .chip{font:inherit;font-size:12px;color:var(--g);background:transparent;border:1px solid var(--g-faint);border-radius:3px;padding:4px 10px;cursor:pointer}
+  .chip:hover,.chip:focus-visible{background:var(--g);color:#001a0a;outline:none}
+  .sh-in{display:flex;gap:8px;align-items:center;padding:8px 14px;border-top:1px solid #222a3a;background:#0b0f18}
+  .sh-in label{color:#4ee44e;font-weight:700;white-space:nowrap;font-size:clamp(12px,1.7vw,14.5px)}
+  .sh-in input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:#e8ecf3;font:inherit;font-size:clamp(12px,1.7vw,14.5px);caret-color:var(--g)}
+
+  /* ---------- simple view ---------- */
+  #simple{position:fixed;inset:0;z-index:3;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
+    background:linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.74));font-family:var(--sans);color:var(--ink);line-height:1.6;
+    visibility:hidden;opacity:0;transition:opacity .5s,visibility .5s}
+  body.shell.view-simple #simple{visibility:visible;opacity:1}
+  body.view-simple .scanlines{opacity:.3}
+  .sv-nav{position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;gap:6px 18px;padding:14px 170px 14px 16px;
+    background:rgba(0,0,0,.6);backdrop-filter:blur(6px);border-bottom:1px solid var(--g-faint);font:13px var(--mono);letter-spacing:.1em;text-transform:uppercase}
+  .sv-nav a{color:var(--g-dim);text-decoration:none}
+  .sv-nav a:hover,.sv-nav a:focus-visible{color:var(--g);outline:none}
+  .sv-wrap{width:min(900px,100%);margin:0 auto;padding:40px 16px 72px;display:flex;flex-direction:column;gap:20px}
+  .hero{padding:24px 0 34px;border-bottom:1px solid var(--g-faint);margin-bottom:6px}
+  .hero-cmd{font:13px var(--mono);color:#f5d76e;letter-spacing:.04em;margin-bottom:18px;overflow-wrap:anywhere}
+  .hero-big{font:700 clamp(40px,10vw,104px)/.92 var(--sans);letter-spacing:-.02em;color:#eafff2;text-transform:uppercase;
+    text-shadow:0 0 30px rgba(0,255,102,.25)}
+  .hero-big span{display:block;white-space:nowrap}
+  .hero-note{margin-top:24px;font:14px/1.7 var(--mono);color:#9aa4b8;max-width:52ch}
+  @media (max-width:560px){ .hero-big span{white-space:normal} }
+  .sv-head{display:flex;flex-direction:column;gap:10px;padding-bottom:8px}
+  .sv-tag{font:12px var(--mono);letter-spacing:.2em;color:var(--g-dim);text-transform:uppercase}
+  .sv-head h1{font:400 clamp(28px,5.5vw,52px)/1.05 var(--mono);color:#eafff2;text-shadow:0 0 20px rgba(0,255,102,.6);text-wrap:balance;overflow-wrap:anywhere}
+  .sv-sub{font-size:clamp(16px,2.4vw,20px);color:var(--g)}
+  .sample{align-self:flex-start;font:12px var(--mono);color:#f5d76e;border:1px dashed rgba(245,215,110,.45);padding:6px 10px;border-radius:3px}
+  .pn{background:rgba(6,10,8,.8);border:1px solid rgba(0,255,102,.18);border-radius:6px;padding:20px 22px;backdrop-filter:blur(6px);scroll-margin-top:64px}
+  .pn h2{font:400 18px var(--mono);color:var(--g);letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px}
+  .pn h2::before{content:'// ';color:var(--g-dim)}
+  .pn p+p{margin-top:10px}
+  .pn a{color:#7db8ff;overflow-wrap:anywhere}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px}
+  .card{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border:1px solid var(--g-faint);border-radius:4px;background:rgba(0,0,0,.35);min-width:0}
+  .card h3,.tmi h3{font:500 17px var(--sans);color:#fff}
+  .meta{font:12px var(--mono);color:#7d8597;letter-spacing:.06em}
+  .tags{display:flex;flex-wrap:wrap;gap:6px}
+  .tag{font:12px var(--mono);color:var(--g);border:1px solid var(--g-faint);padding:2px 7px;border-radius:3px}
+  .badge{color:#f5d76e;font-weight:700}
+  .reveal{font:inherit;font-size:inherit;background:none;border:0;padding:0;cursor:pointer;color:var(--g);border-bottom:1px dotted var(--g-dim)}
+  .reveal:hover,.reveal:focus-visible{color:#fff;outline:none}
+  /* TryHackMe badge, framed and recoloured to match the site (hover shows original colours) */
+  .thm-card{display:block;width:100%;max-width:422px;margin:10px 0 4px;border:1px solid rgba(0,255,102,.28);border-radius:4px;
+    background:rgba(0,0,0,.6);box-shadow:0 0 26px rgba(0,255,102,.08);overflow:hidden;font-family:var(--mono);line-height:1.4}
+  .thm-head{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--g-faint);
+    background:rgba(0,0,0,.45);font-size:11px;letter-spacing:.08em;color:var(--g-dim)}
+  .thm-dots{display:flex;gap:4px;flex:none}
+  .thm-dots i{width:7px;height:7px;border-radius:50%;border:1px solid var(--g-dim)}
+  .thm-url{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .thm-live{display:flex;align-items:center;gap:6px;color:var(--g);flex:none}
+  .thm-live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--g);box-shadow:0 0 8px var(--g);animation:blink 1.4s steps(1) infinite}
+  .thm-body{display:block;padding:10px}
+  .thm-wrap{display:block;width:400px;max-width:100%;height:172px;overflow:hidden;border-radius:6px}
+  .thm{display:block;width:400px;height:172px;border:0;overflow:hidden;color-scheme:light;
+    filter:invert(1) grayscale(1) sepia(1) saturate(4) hue-rotate(75deg) brightness(.92) contrast(1.15);
+    mix-blend-mode:screen;transition:filter .4s}
+  .thm-card:hover .thm{filter:none;mix-blend-mode:normal}
+  .thm-card a.thm-foot{display:block;padding:6px 10px;border-top:1px solid var(--g-faint);text-align:right;
+    font-size:11px;letter-spacing:.08em;color:var(--g-dim);text-decoration:none}
+  .thm-card a.thm-foot:hover,.thm-card a.thm-foot:focus-visible{color:var(--g);outline:none}
+  @media (prefers-reduced-motion:reduce){ .thm-live::before{animation:none} }
+  .thm{transform-origin:0 0}
+  .ach{display:flex;flex-direction:column;gap:6px;padding:14px 16px;border:1px solid var(--g-faint);border-radius:4px;background:rgba(0,0,0,.35)}
+  .ach + .ach{margin-top:12px}
+  .ach-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+  .ach-badge{font:600 11px var(--mono);letter-spacing:.14em;color:#1a1400;background:#f5d76e;padding:2px 8px;border-radius:3px}
+  .ach h3{font:500 17px var(--sans);color:#fff}
+  .tmi{padding-left:16px;border-left:1px solid var(--g-dim);display:flex;flex-direction:column;gap:4px}
+  .tmi + .tmi{margin-top:18px}
+  .tmi ul{padding-left:18px;display:flex;flex-direction:column;gap:3px}
+  .sk{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:14px}
+  .sk h3{font:12px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--g-dim);margin-bottom:8px}
+  .ct{display:grid;gap:8px}
+  .ct b{font:12px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--g-dim);display:inline-block;min-width:92px;font-weight:400}
+
+  #replay{display:none;position:fixed;z-index:9;left:16px;bottom:14px;background:rgba(0,0,0,.55);border:1px solid var(--g-faint);color:var(--g-dim);
+    font:inherit;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:6px 11px;cursor:pointer}
+  body.shell #replay{display:block}
+  #replay:hover,#replay:focus-visible{color:var(--g);border-color:var(--g);outline:none}
+  #viewbtn{display:none;position:fixed;z-index:9;right:16px;top:10px;background:rgba(0,0,0,.55);border:1px solid var(--g-faint);color:var(--g-dim);
+    font:inherit;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:6px 11px;cursor:pointer}
+  body.shell #viewbtn{display:block}
+  #viewbtn:hover,#viewbtn:focus-visible{color:var(--g);border-color:var(--g);outline:none}
+  @media (max-width:560px){ .sh{height:80vh} .sh-in input{font-size:16px} .sv-nav{padding-right:16px;padding-top:50px} .pn{padding:16px} }
+  @media (prefers-reduced-motion:reduce){ .ln{animation:none} #simple{scroll-behavior:auto} }
+
+  @media (max-width:560px){ .hud{font-size:10px;padding:10px 14px} .hud .hide-sm{display:none} }
+
+  @media (max-width:560px){ .term-menu{display:none} .term{height:86vh} }
+  @media (prefers-reduced-motion:reduce){
+    body.flicker #flash,.term.glitch{animation:none}
+    body.flicker #bg,body.flicker #rain{animation:none;transition:opacity 1s}
+  }
+</style>
+</head>
+<body>
+
+<iframe id="bg" title="" aria-hidden="true" tabindex="-1" hidden></iframe>
+<canvas id="rain" aria-hidden="true" hidden></canvas>
+<div class="vignette"></div>
+<div class="scanlines"></div>
+<div id="flash"></div>
+
+<main class="stage">
+  <section class="term" id="term" aria-live="polite">
+    <div class="term-bar">
+      <span class="term-title">root@kali: ~/intel</span>
+      <span class="term-ctl"><i>&#8212;</i><i>&#9633;</i><i class="x">&#10005;</i></span>
+    </div>
+    <div class="term-menu">File &nbsp;&nbsp; Actions &nbsp;&nbsp; Edit &nbsp;&nbsp; View &nbsp;&nbsp; Help</div>
+    <div class="term-body" id="tb"></div>
+  </section>
+
+  <section class="choice" id="choice" aria-live="polite">
+    <div class="doc-bar"><i></i><i></i><i></i>
+      <span>sealed-archive://dossiers/WR-0x7F/attribution_report.txt</span><em class="ok">DECRYPTED</em>
+    </div>
+    <div class="doc-body">
+    <div class="doc" id="doc">
+    <p class="tlp" id="tlp">TLP:RED // EYES ONLY</p>
+    <h1 id="c1"></h1>
+    <p class="sub" id="c2"></p>
+    <div class="pills" id="pills">
+      <button class="act" id="red" type="button">[ Declassify ]</button>
+      <p class="act-note">Release the full attribution report on the actor behind the alias.</p>
+    </div>
+    <div class="after" id="after"></div>
+    </div>
+    </div>
+  </section>
+
+  <!-- After the red pill: interactive portfolio terminal -->
+  <section class="sh" id="sh" aria-label="Portfolio terminal" aria-hidden="true">
+    <div class="term-bar">
+      <span class="term-title">analyst@matrix: ~</span>
+      <span class="term-ctl"><i>&#8212;</i><i>&#9633;</i><i class="x">&#10005;</i></span>
+    </div>
+    <div class="sh-body" id="shb" tabindex="0" role="log" aria-live="polite"></div>
+    <div class="chips" id="chips"></div>
+    <form class="sh-in" id="shf" autocomplete="off">
+      <label for="cmd">analyst@matrix:~$</label>
+      <input id="cmd" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Type a command, for example help">
+    </form>
+  </section>
+</main>
+
+<!-- Simple (non-terminal) view of the same content -->
+<div id="simple" aria-hidden="true">
+  <nav class="sv-nav" id="svNav" aria-label="Sections"></nav>
+  <div class="sv-wrap" id="svWrap"></div>
+</div>
+<button id="viewbtn" type="button">Simple view</button>
+<button id="replay" type="button">Replay intro</button>
+
+
+<div class="hud bottom">
+  <div class="hide-sm">TLP:AMBER // Actor: WHITE RABBIT // Attribution: pending</div>
+  <button id="skip" type="button">Skip intro &raquo;</button>
+</div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const hex = n => Array.from({length: n}, () => '0123456789abcdef'[rnd(0, 15)]).join('');
+  const node = () => { const c = 'abcdefghijklmnopqrstuvwxyz234567'; let s = ''; for (let i = 0; i < 16; i++) s += c[rnd(0, 31)]; return s + '.zion'; };
+
+  /* ================================================================
+     SCRIPT — edit freely. Everything here is fictional flavour text.
+       {cmd: '...'}                 typed at the root prompt
+       {out: '...', cls, wait}      printed line (HTML allowed)
+       {bar: 'label', steps, ms}    animated progress bar
+       {relays: n}                  n fake relay hops
+       {pause: ms}
+     ================================================================ */
+  const SCRIPT = [
+    {cmd: 'cat ~/intel/actors/white_rabbit.profile'},
+    {out: '<span class="dim">─── THREAT ACTOR PROFILE ─────────────── </span><span class="yl">TLP:AMBER</span>', wait: 40},
+    {out: '  ACTOR        <span class="kw">WHITE RABBIT</span>', wait: 40},
+    {out: '  ATTRIBUTION  <span class="err">UNKNOWN</span>', wait: 40},
+    {out: '  ASSESSMENT   23 responsible disclosures. 0 malicious incidents.', wait: 40},
+    {out: '               Classification: <span class="ok">WHITE HAT</span>', wait: 500},
+
+    {cmd: './attribute --actor "WHITE RABBIT"'},
+    {bar: '<span class="kb">[*]</span> correlating persona infrastructure', steps: 16, ms: 30},
+    {out: '<span class="err">[-]</span> 312 linked personas. all burned.', wait: 650},
+    {out: '<span class="ok">[+]</span> artifact recovered: reused signing key in archived commit', wait: 650},
+    {out: '<span class="ok">[+]</span> attribution confidence: <span class="ok">HIGH</span>', wait: 450},
+
+    {cmd: './retrieve --dossier WR-0x7F --decrypt'},
+    {out: '<span class="kb">[*]</span> sealed archive mirror located. analyst clearance <span class="ok">granted</span>', wait: 350},
+    {bar: '<span class="kb">[*]</span> decrypting attribution_report.enc', steps: 16, ms: 30},
+
+    {out: '', wait: 60},
+    {out: '<span class="big">[+] ATTRIBUTION COMPLETE  //  dossier decrypted.</span>', cls: 'blinky', wait: 1100},
+  ];
+
+  /* ---------- background: Rezmason's matrix rain, preloaded but invisible ---------- */
+  const BG_URL = 'matrix/index.html?volumetric=true&suppressWarnings=true&bloomStrength=0.8'
+               + (reduce ? '&forwardSpeed=0.1&animationSpeed=0.3' : '');
+  function fallbackRain(){
+    const cv = $('#rain'), ctx = cv.getContext('2d'); cv.hidden = false;
+    const g = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789';
+    const size = 16; let cols, drops;
+    const fit = () => { cv.width = innerWidth; cv.height = innerHeight; cols = Math.ceil(cv.width / size); drops = Array.from({length: cols}, () => Math.random() * -50); };
+    fit(); addEventListener('resize', fit);
+    setInterval(() => {
+      ctx.fillStyle = 'rgba(0,0,0,.09)'; ctx.fillRect(0, 0, cv.width, cv.height);
+      ctx.font = size + 'px "Share Tech Mono", monospace';
+      for (let i = 0; i < cols; i++){
+        const x = i * size, y = drops[i] * size;
+        ctx.fillStyle = '#d9ffe9'; ctx.fillText(g[rnd(0, g.length - 1)], x, y);
+        ctx.fillStyle = '#00ff66'; ctx.fillText(g[rnd(0, g.length - 1)], x, y - size);
+        if (y > cv.height && Math.random() > .975) drops[i] = 0;
+        drops[i] += .55;
+      }
+    }, 45);
+  }
+  (async () => {
+    try {
+      const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 4000);
+      const r = await fetch('matrix/index.html', {signal: ctl.signal}); if (!r.ok) throw 0;
+      clearTimeout(to);
+      const f = $('#bg'); f.src = BG_URL; f.hidden = false;
+    } catch (e) { fallbackRain(); }
+  })();
+
+  /* ---------- terminal plumbing ---------- */
+  let skipped = false;
+  const sleep = ms => skipped ? Promise.resolve() : new Promise(r => setTimeout(r, ms));
+  const tb = $('#tb');
+  const PROMPT1 = '<span class="kb">┌──(</span><span class="kr">root㉿kali</span><span class="kb">)-[</span><span class="kw">~/intel</span><span class="kb">]</span>';
+  const PROMPT2 = '<span class="kb">└─</span><span class="kr">#</span> <span class="cmd"></span>';
+
+  function line(html = '', cls = ''){
+    const d = document.createElement('div');
+    d.className = 'tl ' + cls; d.innerHTML = html;
+    tb.appendChild(d);
+    while (tb.children.length > 40) tb.removeChild(tb.firstChild);
+    return d;
+  }
+  async function typeCmd(text){
+    line(PROMPT1);
+    const el = line(PROMPT2).querySelector('.cmd');
+    const caret = document.createElement('i'); caret.className = 'caret'; el.after(caret);
+    await sleep(280);
+    for (const ch of text){
+      if (skipped) { el.textContent = text; break; }
+      el.textContent += ch;
+      await sleep(16 + Math.random() * 20);
+    }
+    await sleep(160);
+    caret.remove();
+  }
+  async function bar(label, steps, ms){
+    const d = line(), w = 28;
+    for (let i = 0; i <= steps; i++){
+      const p = Math.round(i / steps * 100), f = Math.round(p / 100 * w);
+      d.innerHTML = label + ' [<span class="ok">' + '#'.repeat(f) + '</span>' + '.'.repeat(w - f) + '] ' + String(p).padStart(3) + '%';
+      await sleep(ms + rnd(0, ms));
+    }
+  }
+  async function relays(n){
+    for (let i = 1; i <= n; i++){
+      line('<span class="dim">    hop ' + i + '/' + n + '  ' + node() + '  0x' + hex(8) + '  ' + String(rnd(40, 380)).padStart(3) + 'ms</span>');
+      await sleep(rnd(160, 320));
+    }
+  }
+
+  /* ---------- helpers for a hand-written terminal() ---------- */
+  const fakeIp = () => [rnd(11, 223), rnd(0, 255), rnd(0, 255), rnd(1, 254)].join('.');
+  const onion = () => node().replace('.zion', '.onion');
+  const PROMPT_REMOTE = '<span class="rg">unverified@unknown</span>:<span class="rb">~</span>$ <span class="cmd"></span>';
+  async function out(html, cls = '', wait = 120){ line(html, cls); await sleep(wait); }
+  async function typed(kind, text, speed = 34){
+    if (kind === 'kali') return typeCmd(text);
+    const el = line(PROMPT_REMOTE).querySelector('.cmd');
+    const caret = document.createElement('i'); caret.className = 'caret'; el.after(caret);
+    await sleep(380);
+    for (const ch of text){
+      if (skipped) { el.textContent = text; break; }
+      el.textContent += ch;
+      await sleep(speed + Math.random() * 24);
+    }
+    await sleep(240);
+    caret.remove();
+  }
+
+  /* ================== PASTE YOUR terminal() FUNCTION BELOW ==================
+     If a terminal() function exists here, it runs instead of the SCRIPT list. */
+
+
+  /* ================== END OF PASTE AREA ================== */
+
+  /* ---------- run ---------- */
+  async function run(){
+    await sleep(300);
+    $('#term').classList.add('open');
+    await sleep(450);
+
+    if (typeof terminal === 'function') { await terminal(); reveal(); return; }
+
+    for (const s of SCRIPT){
+      if (s.cmd) await typeCmd(s.cmd);
+      else if (s.bar) await bar(s.bar, s.steps, s.ms);
+      else if (s.relays) await relays(s.relays);
+      else if (s.pause) await sleep(s.pause);
+      else { line(s.out, s.cls || ''); await sleep(s.wait ?? 90); }
+    }
+    reveal();
+  }
+
+  /* ---------- glitch → terminal collapses → screen flickers → rain ---------- */
+  let revealed = false;
+  const SEEN_KEY = 'wr-intro-seen';
+  function replayIntro(){
+    try { localStorage.removeItem(SEEN_KEY); } catch (e) {}
+    location.reload();
+  }
+  // returning visitor: no terminal, no report; straight to the portfolio
+  async function returning(){
+    revealed = true;
+    $('#term').style.display = 'none';
+    document.body.classList.add('live');
+    await sleep(300);
+    openPortfolio();
+  }
+  async function reveal(){
+    if (revealed) return; revealed = true;
+    const term = $('#term');
+    term.classList.add('glitch');
+    await new Promise(r => setTimeout(r, 500));
+    term.classList.remove('glitch');
+    term.classList.add('close');
+    await new Promise(r => setTimeout(r, 380));
+    document.body.classList.add('flicker');
+    await new Promise(r => setTimeout(r, 1500));
+    document.body.classList.add('live');
+    term.style.display = 'none';
+    skipped = false;
+    await sleep(600);    // let the rain breathe before speaking
+    choice();
+  }
+
+  /* ---------- the attribution report ---------- */
+  async function typeInto(el, text, speed){
+    for (const ch of text){ el.textContent += ch; await sleep(speed + Math.random() * 25); }
+  }
+  // text "decrypts" out of random glyphs, left to right
+  async function decode(el, text, ms = 900){
+    const g = 'ｱｲｳｴｵｶｷｸｹｺ0123456789ABCDEF#$%&@';
+    const t0 = performance.now();
+    while (true){
+      const p = Math.min(1, (performance.now() - t0) / ms), n = Math.floor(p * text.length);
+      el.textContent = text.slice(0, n) + Array.from(text.slice(n), ch => ch === ' ' ? ' ' : g[rnd(0, g.length - 1)]).join('');
+      if (p >= 1) break;
+      await new Promise(r => requestAnimationFrame(r));
+    }
+  }
+  async function choice(){
+    const box = $('#choice');
+    box.classList.add('show');
+    await sleep(30); box.classList.add('in');
+    await sleep(350);
+
+    $('#doc').classList.add('show');
+    await sleep(200);
+    $('#tlp').classList.add('show');
+    await sleep(350);
+    await decode($('#c1'), 'Attribution complete.', 600);
+    await sleep(200);
+    await decode($('#c2'), 'Threat actor WHITE RABBIT identified with high confidence. Disclosure is irreversible.', 900);
+    await sleep(250);
+    $('#pills').classList.add('show');
+    try { localStorage.setItem(SEEN_KEY, '1'); } catch (e) {}
+  }
+  $('#red').addEventListener('click', async () => {
+    $('#pills').classList.remove('show');
+    const a = $('#after'); a.textContent = '';
+    await typeInto(a, '> Clearance verified. Releasing report...', 22);
+    await sleep(800);
+    const box = $('#choice');
+    box.classList.remove('in');
+    await sleep(700);
+    box.classList.remove('show');
+    openPortfolio();
+  });
+
+  /* ================================================================
+     PORTFOLIO DATA: edit this block. The terminal and the simple
+     view are both built from it. Set sample to false when done.
+     ================================================================ */
+  const DATA = {
+    sample: false,
+    name: 'Saptarshi Mazumder',
+    role: 'Cybersecurity Analyst',
+    tagline: 'Cybersecurity Analyst · SOC Operations · Threat Hunting & Web App Security',
+    // big statements at the top of the simple view (3 short lines each), cycled every few seconds
+    statements: [
+      ['I think like', 'an attacker', 'to defend'],
+      ['I find what', 'others', 'miss'],
+      ['I break things', 'to make them', 'unbreakable']
+    ],
+    philosophy: "Security isn't a feature you ship. It's asking what could go wrong, before someone else does.",
+    location: 'Noida, India',
+    about: [
+      'Cybersecurity analyst focused on SOC operations, threat hunting and web application security. As a SOC intern at Protecte Technologies I triaged 80 to 120 alerts a day, cut false positives by about 25% through log correlation, and tested web applications against the OWASP Top 10.',
+      'I build my own tooling in Python and PowerShell, from recon automation to ThreatHunt Pro, a Windows threat-hunting toolkit. I am also a founding team member of Security BSides Mussoorie.'
+    ],
+    achievements: [
+      {badge: 'FOUNDING TEAM', title: 'Security BSides Mussoorie', org: 'Community cybersecurity conference', date: '', blurb: 'Founding team member of a community-driven cybersecurity conference hosting 20+ speakers and 100+ students from across India.', tags: ['Community', 'Conference'], link: 'https://bsidesmussoorie.in/'},
+      {badge: 'TOP 7%', title: 'TryHackMe', org: 'Global ranking', date: '', blurb: 'Ranked in the top 7% of users on TryHackMe, a hands-on cybersecurity learning platform with over 1 million users.', tags: ['Hands-on labs', 'Offensive & defensive'], link: 'https://tryhackme.com/p/cyberrishi23', thm: true},
+      {badge: 'SECURED', title: 'IIIT College Website', org: 'Passive web penetration test', date: '', blurb: 'Helped secure the college website through passive web penetration testing.', tags: ['Web App Security']}
+    ],
+    projects: [
+      {name: 'ThreatHunt Pro', year: '', blurb: 'Automated Windows threat-hunting toolkit. Enumerates network listeners, kernel drivers, autoruns, WMI persistence and outbound connections; verifies signatures and hashes to flag unsigned or anomalous binaries; checks reputation through the VirusTotal v3 API with rate-limited queries; and writes SIEM-style TXT and HTML forensic reports to speed up analyst triage. Packaged as a standalone executable for SOC and incident-response use.', stack: ['PowerShell', 'Windows Security', 'VirusTotal API'], link: '#'},
+      {name: 'MAC and IP Spoofer', year: '', blurb: 'Python tool on Debian Linux that spoofs MAC and IP addresses to simulate asset impersonation in isolated OT/ICS testbeds, for testing network resilience against ARP spoofing. 95% success rate across isolated testbeds, validated with Wireshark and arp-scan.', stack: ['Python', 'Debian Linux', 'Wireshark'], link: '#'}
+    ],
+    education: [
+      {school: 'Indian Institute of Information Technology Ranchi', degree: 'Bachelor of Engineering, Electronics and Communication', years: 'Dec 2020 to Jun 2024', notes: 'Thesis: Defense against malware attacks on DNNs. Coursework: Mathematical Computing, Data Structures & Algorithms, Computer Vision, Soft Computing, DBMS.'}
+    ],
+    career: [
+      {role: 'SOC Intern', org: 'Protecte Technologies', years: 'Jan 2025 to Jun 2025 · Delhi/NCR', points: [
+        'Monitored 24/7 SOC operations, triaging 80 to 120 alerts a day and cutting false positives by about 25% through log correlation.',
+        'Investigated IPS alerts to identify malicious traffic and exploit signatures; escalated confirmed incidents to L2/L3 with documented timelines, affected assets and remediation.',
+        'Performed web application penetration testing with Burp Suite, Nmap and Metasploit, covering authentication bypass, IDOR, injection flaws and misconfiguration (OWASP Top 10).',
+        'Built Python reconnaissance and exploitation scripts to streamline vulnerability discovery.'
+      ]}
+    ],
+    skills: {
+      'Security': ['SOC operations', 'Alert triage', 'Threat hunting', 'Web app security testing', 'OWASP Top 10', 'API security testing', 'Threat modelling', 'Vulnerability reporting'],
+      'Tools': ['Burp Suite', 'Nmap', 'Metasploit', 'Gobuster / Dirb', 'Hydra', 'Nessus', 'Wireshark', 'Splunk', 'ELK', 'SIEM'],
+      'Code & Platforms': ['Python', 'C', 'JavaScript', 'HTML', 'Bash', 'PowerShell', 'Linux', 'Git', 'Docker (basic)'],
+      'Certifications': ['INE eJPT', 'INE ICCA', 'INE eCTHP', 'SecOps Group CSEDP', 'INE eCPPT (in progress)', 'CompTIA Security+ (in progress)']
+    },
+    // TryHackMe live badge: the long token from your TryHackMe embed code
+    // (https://tryhackme.com/badge/t/TOKEN). Leave empty to show the static badge (TOP 7%) instead.
+    thmBadgeToken: '33d36e59c00cc91800eafdee67036b81578d3a040fff03c4e6ceb72e859c5fc6a7a200ec1ac0cc55bee1094e405578b3',
+    contact: {
+      // email is stored encoded (base64 of the reversed address) so scrapers can't harvest it;
+      // visitors click 'show email' to reveal it. To change it, encode with: btoa('you@mail.com'.split('').reverse().join(''))
+      emailEnc: 'bW9jLmxpYW1nQDlyZWRtdXphbWloc3JhdHBhcw==',
+      github: '#',
+      linkedin: 'https://www.linkedin.com/in/saptarshi-mazumder/',
+      resume: '#'
+    }
+  };
+
+  /* ---------- portfolio terminal ---------- */
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+  const real = u => u && u !== '#';
+  const lk = (u, label) => real(u) ? '<a href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + esc(label) + '</a>' : '<span class="dim">' + esc(label) + ' (link coming soon)</span>';
+  const cl = (cmd, label) => '<span class="cl" data-cmd="' + esc(cmd) + '">' + esc(label || cmd) + '</span>';
+  const ind = h => '<span class="ind">' + h + '</span>';
+  const H = t => '<span class="h">' + esc(t) + '</span>';
+  const dot = (...xs) => xs.filter(Boolean).map(esc).join(' · ');
+  const email = () => { try { return atob(DATA.contact.emailEnc).split('').reverse().join(''); } catch (e) { return ''; } };
+  const emailBtn = () => DATA.contact.emailEnc ? '<button type="button" class="reveal" data-reveal="email">[ show email ]</button>' : '-';
+  const thmLive = a => a.thm && /^[a-f0-9]{32,}$/i.test(String(DATA.thmBadgeToken));
+  // TryHackMe's official badge page, embedded directly (cross-origin, so it cannot touch this page)
+  const thmBadge = a => {
+    const user = (a.link || '').replace(/\/$/, '').split('/').pop();
+    return '<span class="thm-card">' +
+      '<span class="thm-head"><span class="thm-dots"><i></i><i></i><i></i></span>' +
+      '<span class="thm-url">tryhackme://' + esc(user) + '</span><span class="thm-live">LIVE</span></span>' +
+      '<span class="thm-body"><span class="thm-wrap"><iframe class="thm" title="TryHackMe profile badge" scrolling="no" ' +
+      'src="https://tryhackme.com/badge/t/' + DATA.thmBadgeToken + '/embed"></iframe></span></span>' +
+      (real(a.link) ? '<a class="thm-foot" href="' + esc(a.link) + '" target="_blank" rel="noopener noreferrer">view full profile →</a>' : '') +
+      '</span>';
+  };
+  // the badge is a fixed 400x172: shrink it to fit narrow screens
+  function fitThm(){
+    document.querySelectorAll('.thm-wrap').forEach(w => {
+      const p = w.parentElement, cs = getComputedStyle(p);
+      const avail = p.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      if (!avail) return;
+      const s = Math.min(1, avail / 400);
+      w.firstChild.style.transform = s < 1 ? 'scale(' + s.toFixed(3) + ')' : '';
+      w.style.height = Math.round(172 * s) + 'px';
+    });
+  }
+  const thmRO = 'ResizeObserver' in window ? new ResizeObserver(fitThm) : null;
+  addEventListener('resize', fitThm);
+  new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => {
+    if (n.nodeType !== 1) return;
+    (n.matches('.thm-wrap') ? [n] : [...n.querySelectorAll('.thm-wrap')]).forEach(w => { if (thmRO) thmRO.observe(w.parentElement); });
+    setTimeout(fitThm, 0);
+  }))).observe(document.body, {childList: true, subtree: true});
+  const achBadge = a => thmLive(a) ? 'LIVE RANK' : a.badge;
+  const achBlurb = a => thmLive(a) ? 'Hands-on cybersecurity learning platform with over 1 million users. My current rank, updated live:' : a.blurb;
+
+  const shb = $('#shb'), cmdIn = $('#cmd');
+  const PS = '<span class="pr">analyst@matrix:~$</span> ';
+  let lineN = 0, bannerDone = false;
+  const hist = []; let hi = 0;
+
+  function put(html, cls){
+    const d = document.createElement('div');
+    d.className = 'ln ' + (cls || '');
+    d.style.animationDelay = Math.min(lineN++ * 20, 500) + 'ms';
+    d.innerHTML = html;
+    shb.appendChild(d);
+    return d;
+  }
+  function scrollToLine(el){
+    const go = () => { shb.scrollTop = Math.min(el.offsetTop - 8, shb.scrollHeight - shb.clientHeight); };
+    go(); setTimeout(go, 600);
+  }
+
+  const OUT = {
+    about: () => [H('# about'), ...DATA.about.map(esc), ''],
+    achievements: () => [H('# history | grep milestones'), ...DATA.achievements.flatMap(a => [
+      '<span class="badge">[' + esc(achBadge(a)) + ']</span> <span class="b">' + esc(a.title) + '</span>  <span class="dim">' + dot(a.org, a.date) + '</span>',
+      ind(esc(achBlurb(a))),
+      ...(thmLive(a) ? [ind(thmBadge(a))] : []),
+      ...(real(a.link) && !thmLive(a) ? [ind('<span class="dim">link:</span> ' + lk(a.link, a.link.replace(/^https?:\/\//, '').replace(/\/$/, '')))] : []),
+      ...(a.tags && a.tags.length ? [ind('<span class="dim">tags:</span> ' + a.tags.map(esc).join(', '))] : []),
+      ''])],
+    projects: () => [H('# projects'), ...DATA.projects.flatMap((p, i) => [
+      '<span class="b">[' + (i + 1) + '] ' + esc(p.name) + '</span>  <span class="dim">' + esc(p.year) + '</span>',
+      ind(esc(p.blurb)),
+      ind('<span class="dim">stack:</span> ' + p.stack.map(esc).join(', ')),
+      ...(real(p.link) ? [ind('<span class="dim">link:</span>  ' + lk(p.link, 'open project'))] : []),
+      ''])],
+    education: () => [H('# education'), ...DATA.education.flatMap(e => [
+      '<span class="b">' + esc(e.school) + '</span>  <span class="dim">' + esc(e.years) + '</span>',
+      ind(esc(e.degree)),
+      ...(e.notes ? [ind('<span class="dim">' + esc(e.notes) + '</span>')] : []),
+      ''])],
+    career: () => [H('# career'), ...DATA.career.flatMap(c => [
+      '<span class="b">' + esc(c.role) + '</span> <span class="dim">@</span> ' + esc(c.org) + '  <span class="dim">' + esc(c.years) + '</span>',
+      ...c.points.map(p => ind('- ' + esc(p))),
+      ''])],
+    skills: () => [H('# skills'), ...Object.entries(DATA.skills).flatMap(([k, v]) =>
+      ['<span class="b">' + esc(k) + '</span>', ind(v.map(esc).join('  ·  ')), ''])],
+    contact: () => [H('# contact'),
+      '<span class="dim">email    </span> ' + emailBtn(),
+      ...(real(DATA.contact.github) ? ['<span class="dim">github   </span> ' + lk(DATA.contact.github, DATA.contact.github)] : []),
+      '<span class="dim">linkedin </span> ' + lk(DATA.contact.linkedin, DATA.contact.linkedin),
+      '<span class="dim">location </span> ' + esc(DATA.location), ''],
+    resume: () => [real(DATA.contact.resume) ? lk(DATA.contact.resume, 'resume.pdf') : 'Resume available on request. Email me: ' + emailBtn(), '']
+  };
+  const DESC = {
+    about: 'who I am', achievements: 'awards and milestones', projects: 'things I have built', education: 'where I studied', career: 'where I have worked',
+    skills: 'tools and languages', contact: 'how to reach me', resume: 'my resume', simple: 'switch to the simple page',
+    replay: 'watch the intro again', clear: 'clear the screen', help: 'show this list'
+  };
+  const NAMES = [...Object.keys(DESC), 'ls', 'cat', 'whoami', 'pwd', 'sudo', 'rabbit', 'exit'];
+
+  function exec(raw){
+    const echo = put(PS + esc(raw));
+    lineN = 1;
+    const parts = raw.trim().split(/\s+/); let c = (parts[0] || '').toLowerCase(); const arg = (parts[1] || '').replace(/\.(txt|pdf)$/, '').toLowerCase();
+    if (!c) return;
+    let lines = null;
+    if (c === 'cat' && arg){
+      if (OUT[arg]) c = arg; else lines = ['cat: ' + esc(parts[1]) + ': No such file or directory'];
+    }
+    if (c === 'cat' && !arg) lines = ['cat: missing file. Try ' + cl('ls') + '.'];
+    if (!lines){
+      if (OUT[c]) lines = OUT[c]();
+      else if (c === 'help') lines = [H('# commands'), ...Object.keys(DESC).map(k => cl(k) + ' '.repeat(Math.max(1, 12 - k.length)) + '<span class="dim">' + DESC[k] + '</span>'), '<span class="dim">Tip: Tab completes, ↑ ↓ browse history.</span>', ''];
+      else if (c === 'ls') lines = ['about  achievements  projects  education  career  skills  contact  resume.pdf'.split('  ').map(n => cl(n.replace('.pdf', ''), n)).join('  '), ''];
+      else if (c === 'whoami') lines = ['analyst', ''];
+      else if (c === 'pwd') lines = ['/home/analyst', ''];
+      else if (c === 'sudo') lines = ['analyst is not in the sudoers file. This incident will be reported.', ''];
+      else if (c === 'rabbit') lines = ['<span class="h">You found me. Most people never do.</span>', ''];
+      else if (c === 'clear'){ shb.innerHTML = ''; return; }
+      else if (c === 'replay'){ replayIntro(); return; }
+      else if (c === 'simple' || c === 'exit' || c === 'quit'){ setView('simple'); return; }
+      else lines = ['bash: ' + esc(parts[0]) + ': command not found. Type ' + cl('help') + '.', ''];
+    }
+    lines.forEach(l => put(l));
+    scrollToLine(echo);
+  }
+
+  function complete(){
+    const v = cmdIn.value.toLowerCase(); if (!v || /\s/.test(v)) return;
+    const m = NAMES.filter(n => n.startsWith(v));
+    if (m.length === 1) cmdIn.value = m[0];
+    else if (m.length > 1){ lineN = 0; put(PS + esc(v)); put(m.map(n => cl(n)).join('  ')); shb.scrollTop = shb.scrollHeight; }
+  }
+
+  function banner(){
+    if (bannerDone) return; bannerDone = true;
+    lineN = 0;
+    put('<span class="ok">[+] attribution report declassified.</span> Welcome, analyst.');
+    put('');
+    put('<span class="dim">THREAT ACTOR: WHITE RABBIT  →</span>  <span class="h">' + esc(DATA.name) + '</span>');
+    put(esc(DATA.tagline) + '  <span class="dim">· ' + esc(DATA.location) + '</span>');
+    put('');
+    put('Type ' + cl('help') + ' or tap a command below. Prefer reading? Try the ' + cl('simple', 'simple view') + '.');
+    if (DATA.sample) put('<span class="yl">[sample content: edit the DATA block in index.html]</span>');
+    put('');
+  }
+
+  /* ---------- simple view ---------- */
+  function renderSimple(){
+    const sec = (id, title, body) => '<section class="pn" id="sv-' + id + '"><h2>' + title + '</h2>' + body + '</section>';
+    const links = [['about', 'About'], ['achievements', 'Achievements'], ['projects', 'Projects'], ['education', 'Education'], ['career', 'Career'], ['skills', 'Skills'], ['contact', 'Contact']];
+    $('#svNav').innerHTML = links.map(([id, t]) => '<a href="#sv-' + id + '" data-go="sv-' + id + '">' + t + '</a>').join('');
+    $('#svWrap').innerHTML =
+      '<section class="hero" aria-label="Statement"><p class="hero-cmd">$ whoami — WHITE RABBIT // ' + esc(DATA.role) + '</p>' +
+      '<div class="hero-big" id="heroBig">' + DATA.statements[0].map(l => '<span>' + esc(l) + '</span>').join('') + '</div>' +
+      '<p class="hero-note">' + esc(DATA.philosophy) + '</p></section>' +
+      '<header class="sv-head"><p class="sv-tag">// attribution report · declassified</p><h1>' + esc(DATA.name) + '</h1>' +
+      '<p class="sv-sub">' + esc(DATA.tagline) + '</p><p class="meta">' + esc(DATA.location) + '</p>' +
+      (DATA.sample ? '<p class="sample">Sample content. Edit the DATA block in index.html.</p>' : '') + '</header>' +
+      sec('about', 'About', DATA.about.map(p => '<p>' + esc(p) + '</p>').join('')) +
+      sec('achievements', 'Achievements', DATA.achievements.map(a =>
+        '<article class="ach"><div class="ach-top"><span class="ach-badge">' + esc(achBadge(a)) + '</span><span class="meta">' + dot(a.org, a.date) + '</span></div>' +
+        '<h3>' + esc(a.title) + '</h3><p>' + esc(achBlurb(a)) + '</p>' + (thmLive(a) ? thmBadge(a) : '') +
+        (real(a.link) && !thmLive(a) ? '<p>' + lk(a.link, a.thm ? 'View profile' : 'Visit site') + '</p>' : '') +
+        (a.tags && a.tags.length ? '<div class="tags">' + a.tags.map(t => '<span class="tag">' + esc(t) + '</span>').join('') + '</div>' : '') + '</article>').join('')) +
+      sec('projects', 'Projects', '<div class="cards">' + DATA.projects.map(p =>
+        '<article class="card"><h3>' + esc(p.name) + '</h3>' + (p.year ? '<p class="meta">' + esc(p.year) + '</p>' : '') + '<p>' + esc(p.blurb) + '</p>' +
+        '<div class="tags">' + p.stack.map(s => '<span class="tag">' + esc(s) + '</span>').join('') + '</div>' + (real(p.link) ? '<p>' + lk(p.link, 'View project') + '</p>' : '') + '</article>').join('') + '</div>') +
+      sec('education', 'Education', DATA.education.map(e =>
+        '<div class="tmi"><h3>' + esc(e.school) + '</h3><p class="meta">' + esc(e.years) + '</p><p>' + esc(e.degree) + '</p>' + (e.notes ? '<p class="meta">' + esc(e.notes) + '</p>' : '') + '</div>').join('')) +
+      sec('career', 'Career', DATA.career.map(c =>
+        '<div class="tmi"><h3>' + esc(c.role) + ' · ' + esc(c.org) + '</h3><p class="meta">' + esc(c.years) + '</p><ul>' + c.points.map(p => '<li>' + esc(p) + '</li>').join('') + '</ul></div>').join('')) +
+      sec('skills', 'Skills', '<div class="sk">' + Object.entries(DATA.skills).map(([k, v]) =>
+        '<div><h3>' + esc(k) + '</h3><div class="tags">' + v.map(s => '<span class="tag">' + esc(s) + '</span>').join('') + '</div></div>').join('') + '</div>') +
+      sec('contact', 'Contact', '<div class="ct">' +
+        '<div><b>Email</b> ' + emailBtn() + '</div>' +
+        (real(DATA.contact.github) ? '<div><b>GitHub</b> ' + lk(DATA.contact.github, DATA.contact.github) + '</div>' : '') +
+        '<div><b>LinkedIn</b> ' + lk(DATA.contact.linkedin, DATA.contact.linkedin) + '</div>' +
+        '<div><b>Resume</b> ' + (real(DATA.contact.resume) ? lk(DATA.contact.resume, 'resume.pdf') : 'On request') + '</div></div>');
+  }
+
+  /* ---------- view switching ---------- */
+  let heroI = 0, heroBusy = false;
+  async function heroNext(){
+    const box = document.getElementById('heroBig');
+    if (!box || heroBusy || !document.body.classList.contains('view-simple') || document.hidden) return;
+    heroBusy = true;
+    heroI = (heroI + 1) % DATA.statements.length;
+    const next = DATA.statements[heroI], spans = [...box.children];
+    if (reduce){ spans.forEach((s, i) => { s.textContent = next[i] || ''; }); heroBusy = false; return; }
+    const g = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&@', t0 = performance.now(), ms = 900;
+    while (true){
+      const p = Math.min(1, (performance.now() - t0) / ms);
+      spans.forEach((s, i) => {
+        const t = (next[i] || '').toUpperCase(), n = Math.floor(p * t.length);
+        s.textContent = t.slice(0, n) + Array.from(t.slice(n), ch => ch === ' ' ? ' ' : g[rnd(0, g.length - 1)]).join('');
+      });
+      if (p >= 1) break;
+      await new Promise(r => requestAnimationFrame(r));
+    }
+    heroBusy = false;
+  }
+  setInterval(heroNext, 4200);
+
+  function setView(v){
+    const b = document.body, simple = v === 'simple';
+    b.classList.toggle('view-simple', simple);
+    b.classList.toggle('view-term', !simple);
+    $('#simple').setAttribute('aria-hidden', String(!simple));
+    $('#sh').setAttribute('aria-hidden', String(simple));
+    $('#viewbtn').textContent = simple ? 'Terminal view' : 'Simple view';
+    if (!simple && matchMedia('(pointer:fine)').matches) setTimeout(() => cmdIn.focus({preventScroll: true}), 120);
+  }
+  function openPortfolio(){
+    try { localStorage.setItem(SEEN_KEY, '1'); } catch (e) {}
+    renderSimple();
+    document.body.classList.add('shell');
+    setView('term');
+    banner();
+  }
+
+  $('#chips').innerHTML = ['help', 'about', 'achievements', 'projects', 'education', 'career', 'skills', 'contact', 'simple']
+    .map(c => '<button class="chip" type="button" data-cmd="' + c + '">' + c + '</button>').join('');
+  shb.addEventListener('click', e => { const t = e.target.closest('[data-cmd]'); if (t) exec(t.dataset.cmd); });
+  $('#chips').addEventListener('click', e => { const t = e.target.closest('[data-cmd]'); if (t) exec(t.dataset.cmd); });
+  $('#shf').addEventListener('submit', e => {
+    e.preventDefault();
+    const v = cmdIn.value; cmdIn.value = '';
+    if (v.trim()) hist.push(v);
+    hi = hist.length;
+    exec(v);
+  });
+  cmdIn.addEventListener('keydown', e => {
+    if (e.key === 'ArrowUp'){ e.preventDefault(); if (hi > 0){ hi--; cmdIn.value = hist[hi]; } }
+    else if (e.key === 'ArrowDown'){ e.preventDefault(); if (hi < hist.length - 1){ hi++; cmdIn.value = hist[hi]; } else { hi = hist.length; cmdIn.value = ''; } }
+    else if (e.key === 'Tab'){ e.preventDefault(); complete(); }
+    else if (e.key === 'l' && e.ctrlKey){ e.preventDefault(); shb.innerHTML = ''; }
+  });
+  $('#sh').addEventListener('click', e => { if (!e.target.closest('a,button,.cl') && !getSelection().toString() && matchMedia('(pointer:fine)').matches) cmdIn.focus({preventScroll: true}); });
+  $('#svNav').addEventListener('click', e => {
+    const a = e.target.closest('[data-go]'); if (!a) return;
+    e.preventDefault();
+    const t = document.getElementById(a.dataset.go); if (t) t.scrollIntoView({behavior: reduce ? 'auto' : 'smooth', block: 'start'});
+  });
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-reveal="email"]'); if (!b) return;
+    const a = document.createElement('a'), m = email();
+    a.href = 'mailto:' + m; a.textContent = m;
+    b.replaceWith(a);
+  });
+  $('#viewbtn').addEventListener('click', () => setView(document.body.classList.contains('view-simple') ? 'term' : 'simple'));
+
+  $('#skip').addEventListener('click', () => { skipped = true; reveal(); });
+  $('#replay').addEventListener('click', replayIntro);
+  let seen = false;
+  try { seen = localStorage.getItem(SEEN_KEY) === '1'; } catch (e) {}
+  if (seen) returning(); else run();
+})();
+</script>
+</body>
+</html>
